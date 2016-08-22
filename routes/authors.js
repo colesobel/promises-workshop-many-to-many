@@ -83,6 +83,15 @@ router.post('/:id', function (req, res, next) {
 })
 
 router.get('/:id', function (req, res, next) {
+  // console.log('xxxxxxxxxx');
+  // console.log(req.params.id);
+  Authors().where('id', req.params.id).first().then(author => {
+    return knex('authors_books').where('author_id', author.id).pluck('book_id').then(bookIds => {
+      return knex('books').whereIn('id', bookIds).then(books => {
+        res.render('authors/show', {author, books})
+      })
+    })
+  })
   // find the author in Authors
   // get all of the authors book_ids from Authors_Books
   // get all of the authors books from BOOKs
