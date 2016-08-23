@@ -53,9 +53,13 @@ router.post('/', function (req, res, next) {
   }
 })
 
-router.get('/:id/edit', function(req, res, next) {
+router.get('/:id/delete', function(req, res, next) {
   Books().where('id', req.params.id).first().then(book => {
-    res.render('books/edit', {book})
+    return Authors_Books().where('book_id', book.id).pluck('author_id').then(authorIds => {
+      return Authors().whereIn('id', authorIds).then(authors => {
+        res.render('books/delete', {book, authors})
+      })
+    })
   })
 });
 
