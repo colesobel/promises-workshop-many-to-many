@@ -64,6 +64,13 @@ router.post('/:id/delete', function (req, res, next) {
 })
 
 router.get('/:id/edit', function (req, res, next) {
+  Authors().where('id', req.params.id).first().then(author => {
+    Authors_Books().where('author_id', author.id).pluck('book_id').then(book_ids => {
+      Books().whereIn('id', book_ids).then(books => {
+        res.render('authors/edit', {author, books})
+      })
+    })
+  })
   // find the author in Authors
   // get all of the authors book_ids from Authors_Books
   // get all of the authors books from BOOKs
@@ -83,8 +90,6 @@ router.post('/:id', function (req, res, next) {
 })
 
 router.get('/:id', function (req, res, next) {
-  // console.log('xxxxxxxxxx');
-  // console.log(req.params.id);
   Authors().where('id', req.params.id).first().then(author => {
     return knex('authors_books').where('author_id', author.id).pluck('book_id').then(bookIds => {
       return knex('books').whereIn('id', bookIds).then(books => {
@@ -92,11 +97,6 @@ router.get('/:id', function (req, res, next) {
       })
     })
   })
-  // find the author in Authors
-  // get all of the authors book_ids from Authors_Books
-  // get all of the authors books from BOOKs
-  // render the corresponding template
-  // use locals to pass books and author to the view
 })
 
 module.exports = router;
