@@ -18,14 +18,24 @@ function Authors_Books() {
 
 
 router.get('/', function(req, res, next) {
-  // get all authors from Authors
-  // THEN for each author, go get all of their book ids from Authors_Books
-  // THEN go get all that author's books
-  // AND add the array of books to the author object as 'books'
-  // render the appropriate template
-  // pass an array of authors to the view using locals
-
-  // EXAMPLE: { first_name: 'Laura', last_name: 'Lou', bio: 'her bio', books: [ this should be all of her book objects ]}
+  let arr = []
+  Authors().pluck('id').then(author_ids => {
+    for (let id of author_ids) {
+      arr.push(
+        Authors().where('id', id).first().then(author => {
+          return Authors_Books().where('author_id', author.id).pluck('book_id').then(book_ids => {
+            return Books().whereIn('id', book_ids).then(books => {
+              author.books = books
+              return author
+            })
+          })
+        })
+      )
+    }
+    Promise.all(arr).then(authors => {
+      res.render('authors/index', {authors})
+    })
+  })
 });
 
 router.get('/new', function(req, res, next) {
@@ -71,11 +81,6 @@ router.get('/:id/edit', function (req, res, next) {
       })
     })
   })
-  // find the author in Authors
-  // get all of the authors book_ids from Authors_Books
-  // get all of the authors books from BOOKs
-  // render the corresponding template
-  // use locals to pass books and author to the view
 })
 
 router.post('/:id', function (req, res, next) {
@@ -91,8 +96,8 @@ router.post('/:id', function (req, res, next) {
 
 router.get('/:id', function (req, res, next) {
   Authors().where('id', req.params.id).first().then(author => {
-    return knex('authors_books').where('author_id', author.id).pluck('book_id').then(bookIds => {
-      return knex('books').whereIn('id', bookIds).then(books => {
+    return Authors_Books().where('author_id', author.id).pluck('book_id').then(bookIds => {
+      return Books().whereIn('id', bookIds).then(books => {
         res.render('authors/show', {author, books})
       })
     })

@@ -16,7 +16,22 @@ function Authors() {
 }
 
 router.get('/', function(req, res, next) {
-  // your code here
+  Books().pluck('id').then(bookIds => {
+    let arr = []
+    for (let id of bookIds) {
+      arr.push(Books().where('id', id).first().then(book => {
+        return Authors_Books().where('book_id', book.id).pluck('author_id').then(authorIds=> {
+          return Authors().whereIn('id', authorIds).then(authors=>{
+            book.authors = authors
+            return book
+          })
+        })
+      }))
+    }
+    Promise.all(arr).then(books => {
+      res.render('books/index', {books})
+    })
+  })
 });
 
 router.get('/new', function(req, res, next) {
@@ -38,8 +53,10 @@ router.post('/', function (req, res, next) {
   }
 })
 
-router.get('/:id/delete', function(req, res, next) {
-  // your code here
+router.get('/:id/edit', function(req, res, next) {
+  Books().where('id', req.params.id).first().then(book => {
+    res.render('books/edit', {book})
+  })
 });
 
 router.post('/:id/delete', function(req, res, next) {
@@ -55,7 +72,13 @@ router.get('/:id/edit', function(req, res, next) {
 });
 
 router.get('/:id', function(req, res, next) {
-  // your code here 
+  Books().where('id', req.params.id).first().then(book => {
+    return Authors_Books().where('book_id', book.id).pluck('author_id').then(authorIds => {
+      return Authors().whereIn('id', authorIds).then(authors => {
+        res.render('books/show', {book, authors})
+      })
+    })
+  })
 });
 
 router.post('/:id', function(req, res, next) {
